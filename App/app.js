@@ -3,10 +3,14 @@ const { mergeMap, map,share,filter,mapTo,take,debounceTime,throttle} = require('
 var mqtt = require('./mqttCluster.js');
 
 global.mtqqLocalPath = process.env.MQTTLOCAL;
+//global.mtqqLocalPath = 'mqtt://piscos.tk';
+
 
 const KEEPLIGHTONFORSECS = 30 * 1000
-const STARTINGFROMHOURS = 8
-const ENDINGATHOURS = 17
+//const STARTINGFROMHOURS = 8
+//const ENDINGATHOURS = 17
+const STARTINGFROMHOURS = process.env.STARTINGFROMHOURS
+const ENDINGATHOURS = process.env.ENDINGATHOURS
 
 const LIGHTONPAYLOAD = {payload: "10;TriState;8029a0;10;ON;"}
 const LIGHTOFFPAYLOAD = {payload: "10;TriState;8029a0;10;OFF;"}
@@ -23,7 +27,7 @@ const movementSensorsReadingStream = new Observable(async subscriber => {
 });
 
 const sharedSensorStream = movementSensorsReadingStream.pipe(
-    filter(_ => new Date().getHours() >= STARTINGFROMHOURS && new Date().getHours() < ENDINGATHOURS),
+    filter(_ => new Date().getHours() < STARTINGFROMHOURS || new Date().getHours() >= ENDINGATHOURS),
     share()
     )
 const turnOffStream = sharedSensorStream.pipe(
