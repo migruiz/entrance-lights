@@ -4,6 +4,11 @@ var mqtt = require('./mqttCluster.js');
 
 global.mtqqLocalPath = 'mqtt://piscos.tk'
 
+const KEEPLIGHTONFORSECS = 30 * 1000
+const STARTINGFROMHOURS = 14
+const ENDINGATHOURS = 20
+
+
 
 const movementSensorsReadingStream = new Observable(async subscriber => {  
     var mqttCluster=await mqtt.getClusterAsync()   
@@ -14,9 +19,12 @@ const movementSensorsReadingStream = new Observable(async subscriber => {
     });
 });
 
-const sharedSensorStream = movementSensorsReadingStream.pipe(share())
+const sharedSensorStream = movementSensorsReadingStream.pipe(
+    filter(_ => new Date().getHours() >= STARTINGFROMHOURS && new Date().getHours() < ENDINGATHOURS),
+    share()
+    )
 const turnOffStream = sharedSensorStream.pipe(
-    debounceTime(5000),
+    debounceTime(KEEPLIGHTONFORSECS),
     mapTo("OFF"),
     share()
     )
