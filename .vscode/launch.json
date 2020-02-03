@@ -9,7 +9,7 @@
             "request": "launch",
             "name": "Launch Program",
             //"program": "${workspaceFolder}\\App\\app.js"
-            "program": "${workspaceFolder}\\App\\movementStreamExtractor.js"
+            "program": "${workspaceFolder}\\App\\app.js"
         }
     ]
 }

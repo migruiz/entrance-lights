@@ -1,86 +1,48 @@
-const { Observable,of,interval,timer,from,empty} = require('rxjs');
-const { map,buffer,withLatestFrom,tap,share,last,expand,catchError,mergeMap,delay,mapTo,concatMap,switchMapTo,endWith,repeat,shareReplay,timeout,first,filter,merge,timeoutWith,take,toArray,zip} = require('rxjs/operators');
-
-
-
-const { videoFileStream} = require('./ffmpegVideoExtractor.js');
-const { videoSegmentStream } = require('./videoSegmentExtractor');
-const { sensorsReadingStream } = require('./sensorsStreamExtractor');
-const { extractVideoStream } = require('./sensorVideoExtractor');
-const { emailStream } = require('./emailSender');
-const { uploadVideoStream } = require('./uploadYoutube');
-const { clearVideoStream } = require('./clearVideosStream');
-const { movementStream  } = require('./movement/movementStream');
-
-
-
+const { Observable,merge,timer } = require('rxjs');
+const { mergeMap, map,share,filter,mapTo,take,debounceTime,throttle} = require('rxjs/operators');
 var mqtt = require('./mqttCluster.js');
-const fs = require('fs');
-const util = require('util');
+
+global.mtqqLocalPath = 'mqtt://piscos.tk'
+
+const KEEPLIGHTONFORSECS = 30 * 1000
+const STARTINGFROMHOURS = 14
+const ENDINGATHOURS = 20
+
+const LIGHTONPAYLOAD = {payload: "10;TriState;8029a0;10;ON;"}
+const LIGHTOFFPAYLOAD = {payload: "10;TriState;8029a0;10;OFF;"}
 
 
 
-global.sensorReadingTopic = 'sensorReadingTopic';
-global.restartCameraTopic="restartCameraTopic"
-global.mtqqLocalPath = process.env.MQTTLOCAL;
+const movementSensorsReadingStream = new Observable(async subscriber => {  
+    var mqttCluster=await mqtt.getClusterAsync()   
+    mqttCluster.subscribeData('Eurodomest', function(content){
+        if (content.ID==='12345'){
+            subscriber.next({data:'16340250'})
+        }
+    });
+});
 
-const removeFile = path =>  from(util.promisify(fs.unlink)(path)).pipe(switchMapTo(empty()));
-
-const  ffmpegProcessStream = videoFileStream.pipe(repeat(),shareReplay(1))
-
-ffmpegProcessStream.subscribe();
-
-clearVideoStream.subscribe();
-
-
-async function triggerRestartCamera(){
-    var mqttCluster=await mqtt.getClusterAsync()
-    mqttCluster.publishData(restartCameraTopic,{})
-}
-
-const videoHandleStreamErrorFFMPEG = videoSegmentStream.pipe(  
-    catchError(error => of(error).pipe(
-        tap(err => console.log("killing ffmpeg after error extracting videos",err)),
-        withLatestFrom(ffmpegProcessStream),
-        tap(([_, ffmpegProcess]) => ffmpegProcess.kill()),
-        mergeMap(_ => videoHandleStreamErrorFFMPEG)
-        )
-    ) 
-)  
-var sharedvideoHandleStreamErrorFFMPEG = videoHandleStreamErrorFFMPEG.pipe(share())
-const videoHandleStreamError = sharedvideoHandleStreamErrorFFMPEG.pipe(    
-    timeout(5 * 60 * 1000),
-    catchError(error => of(error).pipe(
-        concatMap(err => from(triggerRestartCamera()).pipe(last(),mapTo(err))),
-        mergeMap(_ => videoHandleStreamError)
-        )
+const sharedSensorStream = movementSensorsReadingStream.pipe(
+    filter(_ => new Date().getHours() >= STARTINGFROMHOURS && new Date().getHours() < ENDINGATHOURS),
+    share()
     )
-)  
-const sharedvideoInfo = videoHandleStreamError.pipe(shareReplay(6))
-sharedvideoInfo.subscribe()
-
-const sensorSegmentStream = sensorsReadingStream.pipe(   
-    mergeMap(sensor => sharedvideoInfo.pipe(
-        first(segment => segment.startTime <= sensor.startVideoAt && sensor.endVideoAt <= segment.endTime),        
-        map(segment => ({sensor,segment})),
-        timeout(3 * 60 * 1000),
-        mergeMap(p => extractVideo(p)), 
-        catchError(error => of({sensor,error}) ),        
-        mergeMap(v=> emailStream(v)),
-    )   
+const turnOffStream = sharedSensorStream.pipe(
+    debounceTime(KEEPLIGHTONFORSECS),
+    mapTo("OFF"),
+    share()
     )
-);
+
+const turnOnStream = sharedSensorStream.pipe(
+    throttle(_ => turnOffStream),
+    mapTo("ON")
+)
+
+merge(turnOnStream,turnOffStream).
+pipe(
+    map(e => e==="ON" ? LIGHTONPAYLOAD : LIGHTOFFPAYLOAD),
+    map(e => JSON.stringify(e)),    
+    mergeMap(e => timer(0,500).pipe(take(3),mapTo(e)))
+)
+.subscribe(q => console.log(q))
 
 
-function extractVideo(v){
-    return of(v).pipe(
-    concatMap(v=> extractVideoStream(v).pipe(map(extractedVideoPath => Object.assign({extractedVideoPath},v)))), 
-    concatMap(v=> uploadVideoStream(v).pipe(map(youtubeURL => Object.assign({youtubeURL},v)))),   
-    //map(v => Object.assign({youtubeURL:'https://youtu.be/Nl4dVgaibEc'},v)),
-    mergeMap(v => removeFile(v.extractedVideoPath).pipe(endWith(v))),
-    )
-}
-
-
-sensorSegmentStream.subscribe();
-movementStream.subscribe( d => console.log(JSON.stringify(d)))
