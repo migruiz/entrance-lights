@@ -2,11 +2,11 @@ const { Observable,merge,timer } = require('rxjs');
 const { mergeMap, map,share,filter,mapTo,take,debounceTime,throttle} = require('rxjs/operators');
 var mqtt = require('./mqttCluster.js');
 
-global.mtqqLocalPath = 'mqtt://piscos.tk'
+global.mtqqLocalPath = process.env.MQTTLOCAL;
 
 const KEEPLIGHTONFORSECS = 30 * 1000
-const STARTINGFROMHOURS = 14
-const ENDINGATHOURS = 20
+const STARTINGFROMHOURS = 8
+const ENDINGATHOURS = 17
 
 const LIGHTONPAYLOAD = {payload: "10;TriState;8029a0;10;ON;"}
 const LIGHTOFFPAYLOAD = {payload: "10;TriState;8029a0;10;OFF;"}
@@ -16,7 +16,7 @@ const LIGHTOFFPAYLOAD = {payload: "10;TriState;8029a0;10;OFF;"}
 const movementSensorsReadingStream = new Observable(async subscriber => {  
     var mqttCluster=await mqtt.getClusterAsync()   
     mqttCluster.subscribeData('Eurodomest', function(content){
-        if (content.ID==='12345'){
+        if (content.ID==='206aae' || content.ID==='006aae'){
             subscriber.next({data:'16340250'})
         }
     });
@@ -39,10 +39,11 @@ const turnOnStream = sharedSensorStream.pipe(
 
 merge(turnOnStream,turnOffStream).
 pipe(
-    map(e => e==="ON" ? LIGHTONPAYLOAD : LIGHTOFFPAYLOAD),
-    map(e => JSON.stringify(e)),    
+    map(e => e==="ON" ? LIGHTONPAYLOAD : LIGHTOFFPAYLOAD),  
     mergeMap(e => timer(0,500).pipe(take(3),mapTo(e)))
 )
-.subscribe(q => console.log(q))
+.subscribe(async m => {
+    (await mqtt.getClusterAsync()).publishData('rflinkTX',m)
+})
 
 
