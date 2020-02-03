@@ -1,0 +1,16 @@
+{
+  "name": "live-stream-extractor",
+  "version": "0.0.0",
+  "description": "LiveStreamExtractor",
+  "main": "app.js",
+  "author": {
+    "name": "miguel"
+  },
+  "dependencies": {
+    "mqtt": "~2.18.2",
+    "rxjs": "6.5.2",
+    "inotify":"~1.4.6",
+    "googleapis": "40.0.0",
+    "dateformat": "3.0.3"
+  }
+}
