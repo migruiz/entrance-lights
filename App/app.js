@@ -12,7 +12,7 @@ const LIGHTONPAYLOAD = {payload: "10;TriState;8029a0;10;ON;"}
 const LIGHTOFFPAYLOAD = {payload: "10;TriState;8029a0;10;OFF;"}
 
 
-
+console.log(`starting entrance lights current time ${new Date()}`)
 const movementSensorsReadingStream = new Observable(async subscriber => {  
     var mqttCluster=await mqtt.getClusterAsync()   
     mqttCluster.subscribeData('Eurodomest', function(content){
