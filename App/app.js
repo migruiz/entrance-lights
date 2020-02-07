@@ -44,7 +44,7 @@ const turnOnStream = sharedSensorStream.pipe(
 merge(turnOnStream,turnOffStream).
 pipe(
     map(e => e==="ON" ? LIGHTONPAYLOAD : LIGHTOFFPAYLOAD),  
-    mergeMap(e => timer(0,500).pipe(take(6),mapTo(e)))
+    mergeMap(e => timer(0,300).pipe(take(7),mapTo(e)))
 )
 .subscribe(async m => {
     (await mqtt.getClusterAsync()).publishData('rflinkTX',m)
