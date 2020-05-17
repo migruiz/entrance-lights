@@ -21,7 +21,7 @@ const movementSensorsReadingStream = new Observable(async subscriber => {
     var mqttCluster=await mqtt.getClusterAsync()   
     mqttCluster.subscribeData('EV1527', function(content){
         if (content.ID==='00391d' || content.ID==='0ce052'){
-            console.log(content.ID)
+            console.log(content.ID);
             subscriber.next({data:'16340250'})
         }
     });
@@ -48,7 +48,7 @@ pipe(
     mergeMap(e => timer(0,300).pipe(take(7),mapTo(e)))
 )
 .subscribe(async m => {
-    console.log(JSON.stringify(m))
+    console.log(JSON.stringify(m));
     (await mqtt.getClusterAsync()).publishData('rflinkTX',m)
 })
 
