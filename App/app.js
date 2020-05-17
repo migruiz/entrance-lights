@@ -1,5 +1,5 @@
 const { Observable,merge,timer } = require('rxjs');
-const { mergeMap, map,share,filter,mapTo,take,debounceTime,throttle} = require('rxjs/operators');
+const { mergeMap, map,share,filter,mapTo,take,debounceTime,throttle,throttleTime} = require('rxjs/operators');
 var mqtt = require('./mqttCluster.js');
 
 global.mtqqLocalPath = process.env.MQTTLOCAL;
@@ -21,6 +21,7 @@ const movementSensorsReadingStream = new Observable(async subscriber => {
     var mqttCluster=await mqtt.getClusterAsync()   
     mqttCluster.subscribeData('EV1527', function(content){
         if (content.ID==='00391d' || content.ID==='0ce052'){
+            console.log(content.ID)
             subscriber.next({data:'16340250'})
         }
     });
@@ -47,6 +48,7 @@ pipe(
     mergeMap(e => timer(0,300).pipe(take(7),mapTo(e)))
 )
 .subscribe(async m => {
+    console.log(JSON.stringify(m))
     (await mqtt.getClusterAsync()).publishData('rflinkTX',m)
 })
 
