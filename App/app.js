@@ -19,8 +19,8 @@ const LIGHTOFFPAYLOAD = {payload: "10;TriState;8029a0;10;OFF;"}
 console.log(`starting entrance lights current time ${new Date()}`)
 const movementSensorsReadingStream = new Observable(async subscriber => {  
     var mqttCluster=await mqtt.getClusterAsync()   
-    mqttCluster.subscribeData('Eurodomest', function(content){
-        if (content.ID==='206aae' || content.ID==='006aae'){
+    mqttCluster.subscribeData('EV1527', function(content){
+        if (content.ID==='00391d' || content.ID==='0ce052'){
             subscriber.next({data:'16340250'})
         }
     });
