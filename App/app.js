@@ -45,7 +45,7 @@ const turnOnStream = sharedSensorStream.pipe(
 merge(turnOnStream,turnOffStream).
 pipe(
     map(e => e==="ON" ? LIGHTONPAYLOAD : LIGHTOFFPAYLOAD),  
-    mergeMap(e => timer(300,600).pipe(take(5),mapTo(e)))
+    mergeMap(e => timer(200,1000).pipe(take(5),mapTo(e)))
 )
 .subscribe(async m => {
     console.log(JSON.stringify(m));
