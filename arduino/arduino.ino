@@ -69,7 +69,12 @@ void callback(char* topic, byte* payload, unsigned int length) {
 void loop() {
   if (WiFi.status() != WL_CONNECTED)
     {
-       WIFI_Connect();       
+       WIFI_Connect();
+       return;       
+   }
+   if (!client.connected()) {
+      WIFI_Connect();
+      return;
    }
   client.loop();
 
