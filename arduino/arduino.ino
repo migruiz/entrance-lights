@@ -1,9 +1,9 @@
 #include <ESP8266WiFi.h>
 #include <PubSubClient.h>
  
-const char* ssid = "VM712429A";
-const char* password =  "tBhj6Hxe7abj";
-const char* mqttServer = "192.168.0.11";
+const char* ssid = "HUAWEI";
+const char* password =  "hackol37";
+const char* mqttServer = "piscos.ga";
 const int mqttPort = 1883;
 const char* mqttUser = "YourMqttUser";
 const char* mqttPassword = "YourMqttUserPassword";
@@ -11,42 +11,40 @@ const char* mqttPassword = "YourMqttUserPassword";
 WiFiClient espClient;
 PubSubClient client(espClient);
 int pin = 2;
- 
+
+
+void WIFI_Connect()
+{
+  WiFi.disconnect();
+      WiFi.begin(ssid, password);
+      while (WiFi.status() != WL_CONNECTED) {
+          delay(500);
+        Serial.println("Connecting to WiFi..");
+      }
+      Serial.println("Connected to the WiFi network");
+
+  client.setServer(mqttServer, mqttPort);
+  client.setCallback(callback); 
+  while (!client.connected()) {
+    Serial.println("Connecting to MQTT..."); 
+    if (client.connect("ESP8266Client", mqttUser, mqttPassword )) { 
+      Serial.println("connected");   
+    } else { 
+      Serial.print("failed with state ");
+      Serial.print(client.state());
+      delay(2000); 
+    }
+  } 
+  client.publish("esp/test", "Hello from ESP8266");
+  client.subscribe("esp/test");
+}
+
+
 void setup() {
   pinMode(pin, OUTPUT);
   digitalWrite(pin, HIGH); 
   Serial.begin(115200);
- 
-  WiFi.begin(ssid, password);
- 
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.println("Connecting to WiFi..");
-  }
-  Serial.println("Connected to the WiFi network");
- 
-  client.setServer(mqttServer, mqttPort);
-  client.setCallback(callback);
- 
-  while (!client.connected()) {
-    Serial.println("Connecting to MQTT...");
- 
-    if (client.connect("ESP8266Client", mqttUser, mqttPassword )) {
- 
-      Serial.println("connected");  
- 
-    } else {
- 
-      Serial.print("failed with state ");
-      Serial.print(client.state());
-      delay(2000);
- 
-    }
-  }
- 
-  client.publish("esp/test", "Hello from ESP8266");
-  client.subscribe("esp/test");
- 
+  WIFI_Connect(); 
 }
  
 void callback(char* topic, byte* payload, unsigned int length) {
@@ -69,5 +67,11 @@ void callback(char* topic, byte* payload, unsigned int length) {
 }
  
 void loop() {
+  if (WiFi.status() != WL_CONNECTED)
+    {
+       WIFI_Connect();       
+   }
   client.loop();
+
+  
 }
