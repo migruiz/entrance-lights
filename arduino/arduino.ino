@@ -35,8 +35,8 @@ void WIFI_Connect()
       delay(2000); 
     }
   } 
-  client.publish("esp/test", "Hello from ESP8266");
-  client.subscribe("esp/test");
+  client.publish("esp/front/door", "Hello from ESP8266");
+  client.subscribe("esp/front/door/light");
 }
 
 
