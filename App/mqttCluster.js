@@ -60,6 +60,9 @@ class MQTTClient {
         var message = JSON.stringify(data);
         this.client.publish(topic, message);
     }
+    publishMessage(topic, message) {
+        this.client.publish(topic, message);
+    }
 }
 
 

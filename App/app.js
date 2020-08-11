@@ -12,8 +12,7 @@ const KEEPLIGHTONFORSECS = 30 * 1000
 const STARTINGFROMHOURS = process.env.STARTINGFROMHOURS
 const ENDINGATHOURS = process.env.ENDINGATHOURS
 
-const LIGHTONPAYLOAD = {payload: "10;TriState;8029a0;10;ON;"}
-const LIGHTOFFPAYLOAD = {payload: "10;TriState;8029a0;10;OFF;"}
+
 
 
 console.log(`starting entrance lights current time ${new Date()}`)
@@ -33,23 +32,18 @@ const sharedSensorStream = movementSensorsReadingStream.pipe(
     )
 const turnOffStream = sharedSensorStream.pipe(
     debounceTime(KEEPLIGHTONFORSECS),
-    mapTo("OFF"),
+    mapTo("off"),
     share()
     )
 
 const turnOnStream = sharedSensorStream.pipe(
     throttle(_ => turnOffStream),
-    mapTo("ON")
+    mapTo("on")
 )
 
-merge(turnOnStream,turnOffStream).
-pipe(
-    map(e => e==="ON" ? LIGHTONPAYLOAD : LIGHTOFFPAYLOAD),  
-    mergeMap(e => timer(200,1000).pipe(take(5),mapTo(e)))
-)
+merge(turnOnStream,turnOffStream)
 .subscribe(async m => {
-    console.log(JSON.stringify(m));
-    (await mqtt.getClusterAsync()).publishData('rflinkTX',m)
+    (await mqtt.getClusterAsync()).publishMessage('esp/front/door/light',m)
 })
 
 
