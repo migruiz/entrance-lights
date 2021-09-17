@@ -19,7 +19,7 @@ console.log(`starting entrance lights current time ${new Date()}`)
 const movementSensorsReadingStream = new Observable(async subscriber => {  
     var mqttCluster=await mqtt.getClusterAsync()   
     mqttCluster.subscribeData('EV1527', function(content){
-        if ((content.ID==='001c4e' && content.SWITCH==='03') || content.ID==='0ce052'){
+        if ((content.ID==='001c4e') || content.ID==='0a3789'){
             console.log(content.ID);
             subscriber.next({data:'16340250'})
         }
