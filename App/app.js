@@ -7,16 +7,16 @@ global.mtqqLocalPath = 'mqtt://piscos.tk';
 
 
 const KEEPLIGHTONFORSECS = 30 * 1000
-const STARTINGFROMHOURS = 8
-const ENDINGATHOURS = 17
-//const STARTINGFROMHOURS = process.env.STARTINGFROMHOURS
-//const ENDINGATHOURS = process.env.ENDINGATHOURS
+//const STARTINGFROMHOURS = 7
+//const ENDINGATHOURS = 16
+const STARTINGFROMHOURS = process.env.STARTINGFROMHOURS
+const ENDINGATHOURS = process.env.ENDINGATHOURS
 
-//const DOOR_SENSOR_TOPIC = process.env.DOOR_SENSOR_TOPIC
-const DOOR_SENSOR_TOPIC = 'rflink/EV1527-001c4e'
+const DOOR_SENSOR_TOPIC = process.env.DOOR_SENSOR_TOPIC
+//const DOOR_SENSOR_TOPIC = 'rflink/EV1527-001c4e'
 
-//const OUTDOOR_SENSOR_TOPIC = process.env.OUTDOOR_SENSOR_TOPIC
-const OUTDOOR_SENSOR_TOPIC = 'rflink/EV1527-0a3789'
+const OUTDOOR_SENSOR_TOPIC = process.env.OUTDOOR_SENSOR_TOPIC
+//const OUTDOOR_SENSOR_TOPIC = 'rflink/EV1527-0a3789'
 
 
 console.log(`starting entrance lights current time ${new Date()}`)
