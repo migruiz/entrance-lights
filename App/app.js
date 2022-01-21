@@ -2,11 +2,11 @@ const { Observable,merge,timer } = require('rxjs');
 const { mergeMap, map,share,filter,mapTo,take,debounceTime,throttle,throttleTime} = require('rxjs/operators');
 var mqtt = require('./mqttCluster.js');
 
-//global.mtqqLocalPath = process.env.MQTTLOCAL;
-global.mtqqLocalPath = 'mqtt://piscos.tk';
+global.mtqqLocalPath = process.env.MQTTLOCAL;
+//global.mtqqLocalPath = 'mqtt://piscos.tk';
 
 
-const KEEPLIGHTONFORSECS = 30 * 1000
+const KEEPLIGHTONFORSECS = 62 * 1000
 //const STARTINGFROMHOURS = 7
 //const ENDINGATHOURS = 16
 const STARTINGFROMHOURS = process.env.STARTINGFROMHOURS
@@ -23,15 +23,19 @@ console.log(`starting entrance lights current time ${new Date()}`)
 
 const doorEntranceSensor = new Observable(async subscriber => {  
     var mqttCluster=await mqtt.getClusterAsync()   
-    mqttCluster.subscribeData(DOOR_SENSOR_TOPIC, function(content){        
+    mqttCluster.subscribeData(DOOR_SENSOR_TOPIC, function(content){     
+        if (!content.contact)   {
             subscriber.next({content})
+        }
     });
 });
 
 const outdoorSensor = new Observable(async subscriber => {  
     var mqttCluster=await mqtt.getClusterAsync()   
     mqttCluster.subscribeData(OUTDOOR_SENSOR_TOPIC, function(content){        
+        if (content.occupancy){      
             subscriber.next({content})
+        }
     });
 });
 
