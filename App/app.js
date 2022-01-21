@@ -34,6 +34,7 @@ const outdoorSensor = new Observable(async subscriber => {
     var mqttCluster=await mqtt.getClusterAsync()   
     mqttCluster.subscribeData(OUTDOOR_SENSOR_TOPIC, function(content){        
         if (content.occupancy){      
+            console.log(`motion detected`);
             subscriber.next({content})
         }
     });
