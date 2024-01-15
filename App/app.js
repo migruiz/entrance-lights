@@ -94,7 +94,19 @@ const outdoorSensor = new Observable(async subscriber => {
     });
 });
 
-const movementSensorsReadingStream = merge(doorEntranceSensor,outdoorSensor)
+const secondOutdoorSensor = new Observable(async subscriber => {  
+    var mqttCluster=await mqtt.getClusterAsync()   
+    mqttCluster.subscribeData('zigbee2mqtt/0xa4c1383eda8e611e', function(content){        
+        if (content.occupancy){      
+            console.log(`motion detected 2nd`);
+            subscriber.next({content})
+        }
+    });
+});
+
+
+
+const movementSensorsReadingStream = merge(doorEntranceSensor,outdoorSensor, secondOutdoorSensor)
 
 
 
