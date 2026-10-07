@@ -1,0 +1,7 @@
+# The program's code on top of the last full build (January 2024), for when only App/*.js has
+# changed. A fresh `npm install` in rpi/Dockerfile could pull library versions too new for its
+# node 8; this keeps that build's node and node_modules, so a new npm package still needs the
+# full Dockerfile.
+#   docker buildx build --builder multi -f Dockerfile.code -t migruiz/entrance-lights --load .
+FROM migruiz/entrance-lights@sha256:a96d7968ec635bb3e64c03bf21a3cd43fcdc1aca745172df042299808aeb7e9b
+COPY App/*.js /App/

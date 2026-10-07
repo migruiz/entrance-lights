@@ -134,3 +134,65 @@ merge(turnOnStream,turnOffStream)
 })
 
 
+// --- Someone at the front door, for the kitchen iPad's home screen -----------------------
+// The screens' nginx passes GET /entrance on to this port. The home screen asks every 2
+// seconds, and while `someone` is true it flashes Front door and shows the camera.
+const http = require('http');
+const SCREEN_PORT = 8772;
+// Movement this soon after the front door opens is one of us going in or out.
+const IGNORE_AFTER_DOOR = 2 * 60 * 1000;
+
+const entrance = {
+    motion: false,      // what the outdoor sensor last said
+    doorOpen: null,     // null until the door sensor has reported
+    doorOpenedAt: 0,
+    visitSince: 0,      // when the visitor outside showed up; 0 when there is nobody
+};
+
+mqtt.getClusterAsync().then(mqttCluster => {
+    // A visit starts when the sensor goes from quiet to someone there, and ends when it goes
+    // quiet again (Zigbee2MQTT says so 90 seconds after the last movement).
+    mqttCluster.subscribeData(OUTDOOR_SENSOR_TOPIC, function(content){
+        if (typeof content.occupancy !== 'boolean' || content.occupancy === entrance.motion) return;
+        entrance.motion = content.occupancy;
+        if (!entrance.motion) {
+            if (entrance.visitSince) console.log(`${DateTime.now()} nobody outside any more`);
+            entrance.visitSince = 0;
+        } else if (Date.now() - entrance.doorOpenedAt < IGNORE_AFTER_DOOR) {
+            console.log(`${DateTime.now()} movement outside just after the door opened: one of us`);
+        } else {
+            entrance.visitSince = Date.now();
+            console.log(`${DateTime.now()} someone outside`);
+        }
+    });
+    // The door opening ends a visit: someone answered, or came in.
+    mqttCluster.subscribeData(DOOR_SENSOR_TOPIC, function(content){
+        if (typeof content.contact !== 'boolean') return;
+        const open = !content.contact;
+        if (open && entrance.doorOpen !== true) {
+            entrance.doorOpenedAt = Date.now();
+            if (entrance.visitSince) console.log(`${DateTime.now()} door opened, the visit is over`);
+            entrance.visitSince = 0;
+        }
+        entrance.doorOpen = open;
+    });
+});
+
+http.createServer((request, response) => {
+    if (request.method !== 'GET' || request.url !== '/entrance') {
+        response.writeHead(404);
+        response.end();
+        return;
+    }
+    const now = Date.now();
+    response.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
+    response.end(JSON.stringify({
+        someone: entrance.visitSince > 0,
+        // Tells one visit from the next; only its seconds are meant for the screen, since the
+        // iPad's clock and this one may differ.
+        visit: entrance.visitSince || null,
+        visitSeconds: entrance.visitSince ? Math.round((now - entrance.visitSince) / 1000) : null,
+        motion: entrance.motion,
+        doorOpen: entrance.doorOpen,
+    }));
+}).listen(SCREEN_PORT, () => console.log(`screen port ${SCREEN_PORT}`));

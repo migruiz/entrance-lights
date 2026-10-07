@@ -51,7 +51,15 @@ class MQTTClient {
         this.client.subscribe(topic);
         this.client.on("message", function (mtopic, message) {
             if (topic === mtopic) {
-                var data = JSON.parse(message);
+                // Zigbee2MQTT clears a removed device's topic with an empty message, which
+                // used to crash the program; anything that isn't JSON is skipped.
+                var data;
+                try {
+                    data = JSON.parse(message);
+                } catch (error) {
+                    console.log(`not JSON on ${mtopic}: ${message}`);
+                    return;
+                }
                 onData(data);
             }
         });
