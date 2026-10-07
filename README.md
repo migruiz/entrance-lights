@@ -8,9 +8,10 @@ Runs on the main Pi as the Portainer stack "entrancelights" (container `entrance
 - **Someone at the front door**, for the kitchen iPad's home screen: `GET /entrance` on port
   **8772** (the screens' nginx passes it on as `/entrance`) answers
   `{someone, visit, visitSeconds, motion, doorOpen}`. A visit starts when the outdoor motion
-  sensor goes from quiet to someone there and ends when it goes quiet again or the front door
-  opens. Movement in the 2 minutes after the door opens is one of us going in or out, and
-  starts nothing.
+  sensor goes from quiet to someone there and ends when it goes quiet again. The door rule
+  (`DOOR_RULE` in `App/app.js`) is off since 07/10/2026, at Miguel's request: with it on, the
+  front door opening also ends a visit, and movement in the 2 minutes after the door opens is
+  one of us going in or out and starts nothing.
 
 The sensors are Zigbee2MQTT topics from the stack's environment: `DOOR_SENSOR_TOPIC` and
 `OUTDOOR_SENSOR_TOPIC`. A second outdoor sensor (`0xa4c1383eda8e611e`) is still listened to

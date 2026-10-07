@@ -139,7 +139,10 @@ merge(turnOnStream,turnOffStream)
 // seconds, and while `someone` is true it flashes Front door and shows the camera.
 const http = require('http');
 const SCREEN_PORT = 8772;
-// Movement this soon after the front door opens is one of us going in or out.
+// The door rule: the front door opening ends a visit (someone answered, or came in), and
+// movement this soon after it opens is one of us going in or out. Off for now (Miguel,
+// 07/10/2026): every movement outside counts, whatever the door does.
+const DOOR_RULE = false;
 const IGNORE_AFTER_DOOR = 2 * 60 * 1000;
 
 const entrance = {
@@ -158,21 +161,23 @@ mqtt.getClusterAsync().then(mqttCluster => {
         if (!entrance.motion) {
             if (entrance.visitSince) console.log(`${DateTime.now()} nobody outside any more`);
             entrance.visitSince = 0;
-        } else if (Date.now() - entrance.doorOpenedAt < IGNORE_AFTER_DOOR) {
+        } else if (DOOR_RULE && Date.now() - entrance.doorOpenedAt < IGNORE_AFTER_DOOR) {
             console.log(`${DateTime.now()} movement outside just after the door opened: one of us`);
         } else {
             entrance.visitSince = Date.now();
             console.log(`${DateTime.now()} someone outside`);
         }
     });
-    // The door opening ends a visit: someone answered, or came in.
+    // With the door rule, the door opening ends a visit: someone answered, or came in.
     mqttCluster.subscribeData(DOOR_SENSOR_TOPIC, function(content){
         if (typeof content.contact !== 'boolean') return;
         const open = !content.contact;
         if (open && entrance.doorOpen !== true) {
             entrance.doorOpenedAt = Date.now();
-            if (entrance.visitSince) console.log(`${DateTime.now()} door opened, the visit is over`);
-            entrance.visitSince = 0;
+            if (DOOR_RULE && entrance.visitSince) {
+                console.log(`${DateTime.now()} door opened, the visit is over`);
+                entrance.visitSince = 0;
+            }
         }
         entrance.doorOpen = open;
     });
